@@ -8,15 +8,8 @@ PKG_LICENSE:=BSD
 
 #1.4.3
 PKG_VERSION:=1.4.3
-PKG_SOURCE_URL:=https://pypi.python.org/packages/6c/90/cf10bb2020d2811da811a49601f6eafcda022c6ccd296fd05aba093dee96/
-PKG_MD5SUM:=64a8c5f85fe60caa7b536977254963d8
-
-#Master
-#PKG_VERSION:=2.1.x
-#PKG_SOURCE_URL:=https://github.com/matplotlib/matplotlib.git
-#PKG_SOURCE_PROTO:=git
-#PKG_SOURCE_VERSION:=d78fb0ec4924c5574335e3745f8a20fee200188c
-
+PKG_SOURCE_URL:=https://pypi.python.org/packages/bb/ac/485df0ecb15aa6fec1991945dc0cabfeb724a64f6729e34bab3c6a766813/
+PKG_MD5SUM:=86af2e3e3c61849ac7576a6f5ca44267
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
