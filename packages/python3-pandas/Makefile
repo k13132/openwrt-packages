@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pandas
-PKG_VERSION:=0.21.0rc1
+PKG_VERSION:=0.21.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://pypi.python.org/packages/84/97/ecd945c00c27e98c1540c788c2409de42e116e81fa9ca4c200fb2ec93c8f/
-PKG_MD5SUM:=20b8d7142459e9ca73372a34aa792fc5
+PKG_SOURCE_URL:=https://pypi.python.org/packages/84/4c/622301f99725c6da76ae8079cb6b9091d9098098bd6b4eac47fb502b32f4/
+PKG_MD5SUM:=6f14884caaa87a0824b5e93fe032b904
 PKG_LICENSE:=BSD
 
 PKG_BUILD_DEPENDS:=python3/host python3-setuptools/host python3-numpy/host python3-pytz/host python3-dateutil/host
