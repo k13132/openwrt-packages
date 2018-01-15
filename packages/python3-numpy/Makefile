@@ -15,13 +15,12 @@ PKG_SOURCE_URL:=https://pypi.python.org/packages/a5/16/8a678404411842fe02d780b5f
 PKG_MD5SUM:=c75b072a984028ac746a6a332c209a91
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).zip
 
-PKG_BUILD_DEPENDS:=python3/host python3-setuptools/host python3-dev/host
-HOST_BUILD_DEPENDS:=python3/host python3-setuptools/host python3-dev/host
+HOST_PYTHON3_PACKAGE_BUILD_DEPENDS:="dev"
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
-$(call include_mk, python-host.mk)
-$(call include_mk, python3-package.mk)
+include $(TOPDIR)/feeds/packages/lang/python/python-host.mk
+include $(TOPDIR)/feeds/packages/lang/python/python3-package.mk
 
 define Package/python3-$(PKG_NAME)
   SUBMENU:=Python

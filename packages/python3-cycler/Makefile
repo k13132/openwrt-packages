@@ -18,13 +18,14 @@ PKG_LICENSE:=BSD
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
-PKG_BUILD_DEPENDS:=python3/host python3-setuptools/host python3-six/host
-HOST_BUILD_DEPENDS:=python3/host python3-setuptools/host python3-six/host
+PKG_BUILD_DEPENDS:=python3
+
+HOST_PYTHON3_PACKAGE_BUILD_DEPENDS:="six"
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
-$(call include_mk, python-host.mk)
-$(call include_mk, python3-package.mk)
+include $(TOPDIR)/feeds/packages/lang/python/python-host.mk
+include $(TOPDIR)/feeds/packages/lang/python/python3-package.mk
 
 
 define Package/python3-$(PKG_NAME)

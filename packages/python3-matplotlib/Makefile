@@ -13,11 +13,14 @@ PKG_MD5SUM:=86af2e3e3c61849ac7576a6f5ca44267
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
-PKG_BUILD_DEPENDS:=python3/host python3-setuptools/host python3-numpy/host python3-dateutil/host libpng/host libfreetype/host python3-six/host python3-pytz/host libc libstdcpp python3-pyparsing/host python3-cycler/host
+PKG_BUILD_DEPENDS:=python3
+
+HOST_PYTHON3_PACKAGE_BUILD_DEPENDS:="six numpy dateutil libpng libfreetype six pytz pzparsing cycler"
+
 
 include $(INCLUDE_DIR)/package.mk
 
-$(call include_mk, python3-package.mk)
+include $(TOPDIR)/feeds/packages/lang/python/python3-package.mk
 
 define Package/python3-$(PKG_NAME)
   SUBMENU:=Python

@@ -16,10 +16,9 @@ PKG_SOURCE_URL:=https://pypi.python.org/packages/84/4c/622301f99725c6da76ae8079c
 PKG_MD5SUM:=6f14884caaa87a0824b5e93fe032b904
 PKG_LICENSE:=BSD
 
-PKG_BUILD_DEPENDS:=python3/host python3-setuptools/host python3-numpy/host python3-pytz/host python3-dateutil/host
 
 include $(INCLUDE_DIR)/package.mk
-$(call include_mk, python3-package.mk)
+include $(TOPDIR)/feeds/packages/lang/python/python3-package.mk
 
 define Package/python3-$(PKG_NAME)
   SUBMENU:=Python
