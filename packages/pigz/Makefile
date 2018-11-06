@@ -1,13 +1,3 @@
-####################################################
-# OpenWrt Makefile for FlowPing application
-#
-# File:   Makefile
-# Author: Zbynek Kocur (zbynek.kocur@fel.cvut.cz)
-#
-#
-####################################################
-
-
 include $(TOPDIR)/rules.mk
 
 
