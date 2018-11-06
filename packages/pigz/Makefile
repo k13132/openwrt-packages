@@ -25,7 +25,7 @@ define Package/$(PKG_NAME)
    CATEGORY:=Utilities
    TITLE:=A parallel implementation of gzip
    URL:=https://zlib.net/pigz/
-   DEPENDS:=+libpthread +libstdcpp +libc +zlib
+   DEPENDS:=+zlib
 endef
 
 
