@@ -7,12 +7,12 @@ include $(TOPDIR)/rules.mk
 PKG_NPM_NAME:=javascript-obfuscator
 PKG_NAME:=node-$(PKG_NPM_NAME)
 PKG_VERSION:=0.18.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NPM_NAME)-$(PKG_VERSION).tgz
 PKG_SOURCE_URL:=http://registry.npmjs.org/$(PKG_NPM_NAME)/-/
 PKG_HASH:=3f53199ed892e3faf4ab5726a70181b970b1d1b239f4e6a13d6272cbee02d7cb
-PKG_BUILD_DEPENDS:=node/host node-npm/host
+PKG_BUILD_DEPENDS:=node/host
 PKG_USE_MIPS16:=0
 
 PKG_MAINTAINER:=Zbynek Kocur <zbynek.kocur@fel.cvut.cz>
