@@ -44,7 +44,7 @@ define Package/$(PKG_NAME)/install
 	$(CP) ./firmware/K2013080.mem $(1)/lib/firmware
 
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(CP) ./files/upd72020x-loader.init $(1)/etc/init.d/
+	$(INSTALL_BIN) ./files/upd72020x-loader.init $(1)/etc/init.d/upd72020x-loader
 
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/upd72020x-load $(1)/usr/sbin
