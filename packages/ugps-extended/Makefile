@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ugps-extended
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL=https://github.com/k13132/openwrt-ugps.git
 PKG_SOURCE_PROTO:=git
@@ -22,7 +22,7 @@ PKG_LICENSE:=GPL-2.0+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
-define Package/ugps
+define Package/$(PKG_NAME)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=OpenWrt GPS Daemon
@@ -31,15 +31,15 @@ endef
 
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
 
-define Package/ugps/conffiles
+define Package/$(PKG_NAME)/conffiles
 /etc/config/gps
 endef
 
-define Package/ugps/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/config
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ugps $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/ugps.init $(1)/etc/init.d/ugps
 	$(INSTALL_CONF) ./files/gps.config $(1)/etc/config/gps
 endef
 
-$(eval $(call BuildPackage,ugps))
+$(eval $(call BuildPackage,$(PKG_NAME)))
