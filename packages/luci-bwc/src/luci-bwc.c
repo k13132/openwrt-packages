@@ -16,6 +16,8 @@
  * limitations under the License.
  */
 
+#define _BSD_SOURCE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -26,9 +28,12 @@
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
+#include <endian.h>
+#include <dirent.h>
 
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/types.h>
 #include <arpa/inet.h>
 
 #include <dlfcn.h>
@@ -46,11 +51,6 @@
 #define DB_CN_FILE	DB_PATH "/connections"
 #define DB_LD_FILE	DB_PATH "/load"
 
-#define IF_SCAN_PATTERN \
-	" %[^ :]:%u %u" \
-	" %*d %*d %*d %*d %*d %*d" \
-	" %u %u"
-
 #define LD_SCAN_PATTERN \
 	"%f %f %f"
 
@@ -63,10 +63,10 @@ struct file_map {
 
 struct traffic_entry {
 	uint32_t time;
-	uint32_t rxb;
-	uint32_t rxp;
-	uint32_t txb;
-	uint32_t txp;
+	uint64_t rxb;
+	uint64_t rxp;
+	uint64_t txb;
+	uint64_t txp;
 };
 
 struct conn_entry {
@@ -190,7 +190,7 @@ static int init_file(char *path, int esize)
 
 static inline uint32_t timeof(void *entry)
 {
-	return ntohl(((struct traffic_entry *)entry)->time);
+	return be32toh(((struct traffic_entry *)entry)->time);
 }
 
 static int update_file(const char *path, void *entry, int esize)
@@ -296,7 +296,7 @@ static void iw_close(void *iw)
 
 
 static int update_ifstat(
-	const char *ifname, uint32_t rxb, uint32_t rxp, uint32_t txb, uint32_t txp
+	const char *ifname, uint64_t rxb, uint64_t rxp, uint64_t txb, uint64_t txp
 ) {
 	char path[1024];
 
@@ -316,11 +316,11 @@ static int update_ifstat(
 		}
 	}
 
-	e.time = htonl(time(NULL));
-	e.rxb  = htonl(rxb);
-	e.rxp  = htonl(rxp);
-	e.txb  = htonl(txb);
-	e.txp  = htonl(txp);
+	e.time = htobe32(time(NULL));
+	e.rxb  = htobe64(rxb);
+	e.rxp  = htobe64(rxp);
+	e.txb  = htobe64(txb);
+	e.txp  = htobe64(txp);
 
 	return update_file(path, &e, sizeof(struct traffic_entry));
 }
@@ -346,8 +346,8 @@ static int update_radiostat(
 		}
 	}
 
-	e.time  = htonl(time(NULL));
-	e.rate  = htons(rate);
+	e.time  = htobe32(time(NULL));
+	e.rate  = htobe16(rate);
 	e.rssi  = rssi;
 	e.noise = noise;
 
@@ -374,10 +374,10 @@ static int update_cnstat(uint32_t udp, uint32_t tcp, uint32_t other)
 		}
 	}
 
-	e.time  = htonl(time(NULL));
-	e.udp   = htonl(udp);
-	e.tcp   = htonl(tcp);
-	e.other = htonl(other);
+	e.time  = htobe32(time(NULL));
+	e.udp   = htobe32(udp);
+	e.tcp   = htobe32(tcp);
+	e.other = htobe32(other);
 
 	return update_file(path, &e, sizeof(struct conn_entry));
 }
@@ -402,31 +402,44 @@ static int update_ldstat(uint16_t load1, uint16_t load5, uint16_t load15)
 		}
 	}
 
-	e.time   = htonl(time(NULL));
-	e.load1  = htons(load1);
-	e.load5  = htons(load5);
-	e.load15 = htons(load15);
+	e.time   = htobe32(time(NULL));
+	e.load1  = htobe16(load1);
+	e.load5  = htobe16(load5);
+	e.load15 = htobe16(load15);
 
 	return update_file(path, &e, sizeof(struct load_entry));
 }
 
 static int run_daemon(void)
 {
+	DIR *dir;
 	FILE *info;
-	uint32_t rxb, txb, rxp, txp;
+	uint64_t rxb, txb, rxp, txp;
 	uint32_t udp, tcp, other;
 	uint16_t rate;
 	uint8_t rssi, noise;
 	float lf1, lf5, lf15;
 	char line[1024];
-	char ifname[16];
+	char path[64];
+	char buf[32];
 	int i;
 	void *iw;
 	struct sigaction sa;
+	struct dirent *e;
 
 	struct stat s;
 	const char *ipc = stat("/proc/net/nf_conntrack", &s)
 		? "/proc/net/ip_conntrack" : "/proc/net/nf_conntrack";
+
+	const struct {
+		const char *file;
+		uint64_t *value;
+	} sysfs_stats[] = {
+		{ "rx_packets", &rxp },
+		{ "tx_packets", &txp },
+		{ "rx_bytes",   &rxb },
+		{ "tx_bytes",   &txb }
+	};
 
 	switch (fork())
 	{
@@ -473,41 +486,39 @@ static int run_daemon(void)
 		memset(progname, 0, prognamelen);
 		snprintf(progname, prognamelen, "luci-bwc %d", countdown);
 
-		if ((info = fopen("/proc/net/dev", "r")) != NULL)
+		dir = opendir("/sys/class/net");
+
+		if (dir)
 		{
-			while (fgets(line, sizeof(line), info))
+			while ((e = readdir(dir)) != NULL)
 			{
-				if (strchr(line, '|'))
+				if (!strcmp(e->d_name, "lo") || !strcmp(e->d_name, ".") || !strcmp(e->d_name, ".."))
 					continue;
 
-				if (sscanf(line, IF_SCAN_PATTERN, ifname, &rxb, &rxp, &txb, &txp))
+				if (iw && iw_update(iw, e->d_name, &rate, &rssi, &noise))
+					update_radiostat(e->d_name, rate, rssi, noise);
+
+				for (i = 0; i < sizeof(sysfs_stats)/sizeof(sysfs_stats[0]); i++)
 				{
-					if (strncmp(ifname, "lo", sizeof(ifname)))
-						update_ifstat(ifname, rxb, rxp, txb, txp);
+					*sysfs_stats[i].value = 0;
+
+					snprintf(path, sizeof(path), "/sys/class/net/%s/statistics/%s",
+						e->d_name, sysfs_stats[i].file);
+
+					if ((info = fopen(path, "r")) != NULL)
+					{
+						memset(buf, 0, sizeof(buf));
+						fread(buf, 1, sizeof(buf) - 1, info);
+						fclose(info);
+
+						*sysfs_stats[i].value = (uint64_t)strtoull(buf, NULL, 10);
+					}
 				}
+
+				update_ifstat(e->d_name, rxb, rxp, txb, txp);
 			}
 
-			fclose(info);
-		}
-
-		if (iw)
-		{
-			for (i = 0; i < 5; i++)
-			{
-#define iw_checkif(pattern) \
-				do {                                                      \
-					snprintf(ifname, sizeof(ifname), pattern, i);         \
-					if (iw_update(iw, ifname, &rate, &rssi, &noise))  \
-					{                                                     \
-						update_radiostat(ifname, rate, rssi, noise);      \
-						continue;                                         \
-					}                                                     \
-				} while(0)
-
-				iw_checkif("wlan%d");
-				iw_checkif("ath%d");
-				iw_checkif("wl%d");
-			}
+			closedir(dir);
 		}
 
 		if ((info = fopen(ipc, "r")) != NULL)
@@ -521,15 +532,15 @@ static int run_daemon(void)
 				if (strstr(line, "TIME_WAIT"))
 					continue;
 
-				if ((strstr(line, "src=127.0.0.1 ") && strstr(line, "dst=127.0.0.1 ")) 
+				if ((strstr(line, "src=127.0.0.1 ") && strstr(line, "dst=127.0.0.1 "))
 				|| (strstr(line, "src=::1 ") && strstr(line, "dst=::1 ")))
 					continue;
 
-				if (sscanf(line, "%*s %*d %s", ifname) || sscanf(line, "%s %*d", ifname))
+				if (sscanf(line, "%*s %*d %s", buf) || sscanf(line, "%s %*d", buf))
 				{
-					if (!strcmp(ifname, "tcp"))
+					if (!strcmp(buf, "tcp"))
 						tcp++;
-					else if (!strcmp(ifname, "udp"))
+					else if (!strcmp(buf, "udp"))
 						udp++;
 					else
 						other++;
@@ -610,11 +621,11 @@ static int run_dump_ifname(const char *ifname)
 		if (!e->time)
 			continue;
 
-		printf("[ %u, %u, %" PRIu32
-			   ", %u, %u ]%s\n",
-			ntohl(e->time),
-			ntohl(e->rxb), ntohl(e->rxp),
-			ntohl(e->txb), ntohl(e->txp),
+		printf("[ %" PRIu32 ", %" PRIu64 ", %" PRIu64
+			   ", %" PRIu64 ", %" PRIu64 " ]%s\n",
+			be32toh(e->time),
+			be64toh(e->rxb), be64toh(e->rxp),
+			be64toh(e->txb), be64toh(e->txp),
 			((i + sizeof(struct traffic_entry)) < m.size) ? "," : "");
 	}
 
@@ -646,9 +657,9 @@ static int run_dump_radio(const char *ifname)
 		if (!e->time)
 			continue;
 
-		printf("[ %u, %d, %d, %d ]%s\n",
-			ntohl(e->time),
-			e->rate, e->rssi, e->noise,
+		printf("[ %" PRIu32 ", %" PRIu16 ", %" PRIu8 ", %" PRIu8 " ]%s\n",
+			be32toh(e->time),
+			be16toh(e->rate), e->rssi, e->noise,
 			((i + sizeof(struct radio_entry)) < m.size) ? "," : "");
 	}
 
@@ -680,9 +691,9 @@ static int run_dump_conns(void)
 		if (!e->time)
 			continue;
 
-		printf("[ %u, %u, %u, %u ]%s\n",
-			ntohl(e->time), ntohl(e->udp),
-			ntohl(e->tcp), ntohl(e->other),
+		printf("[ %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 " ]%s\n",
+			be32toh(e->time), be32toh(e->udp),
+			be32toh(e->tcp), be32toh(e->other),
 			((i + sizeof(struct conn_entry)) < m.size) ? "," : "");
 	}
 
@@ -714,9 +725,9 @@ static int run_dump_load(void)
 		if (!e->time)
 			continue;
 
-		printf("[ %u, %u, %u, %u ]%s\n",
-			ntohl(e->time),
-			ntohs(e->load1), ntohs(e->load5), ntohs(e->load15),
+		printf("[ %" PRIu32 ", %" PRIu16 ", %" PRIu16 ", %" PRIu16 " ]%s\n",
+			be32toh(e->time),
+			be16toh(e->load1), be16toh(e->load5), be16toh(e->load15),
 			((i + sizeof(struct load_entry)) < m.size) ? "," : "");
 	}
 

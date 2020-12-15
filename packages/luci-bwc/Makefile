@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-bwc
-PKG_VERSION:=1.0
+PKG_VERSION:=20190401
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Zbynek Kocur <zbynek.kocur@fel.cvut.cz>
