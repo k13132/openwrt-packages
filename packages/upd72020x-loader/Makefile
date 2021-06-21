@@ -4,18 +4,18 @@
 # Type:   OpenWRT Makefile
 # Author: Zbynek Kocur (zbynek.kocur@fel.cvut.cz)
 #
-# Copyright (C) 2020 CTU in Prague
+# Copyright (C) 2021 CTU in Prague
 ####################################################
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=upd72020x-loader
-PKG_VERSION:=1.0
+PKG_VERSION:=20210328
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/markusj/upd72020x-load.git
-PKG_SOURCE_VERSION:=d87965f9c6b795908d9ddccb686bb7303e6bc0f3
+PKG_SOURCE_VERSION:=cc6c3319aa0614fc3a1e772135bc2b65119aed66
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION)
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_SOURCE_SUBDIR)
